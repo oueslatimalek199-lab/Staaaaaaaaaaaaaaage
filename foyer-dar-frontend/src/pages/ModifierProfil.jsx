@@ -1,12 +1,18 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { obtenirProfil, modifierProfil } from "../services/etudiantService";
+import { obtenirVilles } from "../services/villeService";
 
 function ModifierProfil() {
   const [formulaire, setFormulaire] = useState(null);
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
+  const [villes, setVilles] = useState([]);
+
+useEffect(() => {
+  obtenirVilles().then((r) => setVilles(r.data));
+}, []);
 
   useEffect(() => {
     if (!token) {
@@ -64,13 +70,12 @@ function ModifierProfil() {
           </div>
           <div className="field">
             <label>Ville</label>
-            <select name="ville" value={formulaire.ville} onChange={gererChangement}>
-              <option value="Tunis Centre">Tunis Centre</option>
-              <option value="Ghazela">Ghazela</option>
-              <option value="Sousse">Sousse</option>
-              <option value="Sfax">Sfax</option>
-              <option value="Monastir">Monastir</option>
-            </select>
+            <select name="ville" value={formulaire.ville} onChange={gererChangement} required>
+  <option value="">Choisir une ville</option>
+  {villes.map((v) => (
+    <option key={v._id} value={v.nom}>{v.nom}</option>
+  ))}
+</select>
           </div>
           <div className="field">
             <label>Budget (DT)</label>

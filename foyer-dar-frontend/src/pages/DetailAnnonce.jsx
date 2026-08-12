@@ -12,17 +12,24 @@ function DetailAnnonce() {
   const { ouvrirChat } = useChat();
 
   useEffect(() => {
+    const PHOTOS = {
+      salon: ["photo-1583847268964-b28dc8f51f92", "photo-1616047006789-b7af5afb8c20", "photo-1598928506311-c55ded91a20c"],
+      chambre: ["photo-1630699375019-c334927264df", "photo-1560448075-57d0285fc59b", "photo-1652882860938-f90aa298e644"],
+      cuisine: ["photo-1484154218962-a197022b5858", "photo-1630699144641-72fa7a6b8aa1", "photo-1755624222023-621f7718950b"],
+      sdb: ["photo-1584622650111-993a426fbf0a", "photo-1631889993959-41b4e9c6e3c5", "photo-1633104069776-ea7e61258ec9"],
+      balcon: ["photo-1616593969747-4797dc75033e", "photo-1560448205-d82bf18b9bcf"],
+    };
+    const photoUrl = (id) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=1200&q=75`;
+    const choisir = (piece, seed) => photoUrl(PHOTOS[piece][seed % PHOTOS[piece].length]);
+
     obtenirAnnonceParId(id).then((reponse) => {
       const a = reponse.data;
-      // if no photos, generate unique placeholders so they are not identical
-      if (!a.photos || a.photos.length === 0) {
-        a.photos = Array.from({ length: 5 }).map((_, i) => `https://picsum.photos/seed/${id}-${i}/1200/800`);
-      } else {
-        // ensure uniqueness: if backend returns identical URLs, fallback generate unique when duplicates detected
-        const allEqual = a.photos.every((p) => p === a.photos[0]);
-        if (allEqual) {
-          a.photos = a.photos.map((_, i) => `https://picsum.photos/seed/${id}-${i}/1200/800`);
-        }
+      const seed = parseInt(id.slice(-4), 16) || 0;
+
+      if (!a.photos || a.photos.length === 0 || a.photos.every((p) => p === a.photos[0])) {
+        a.photos = a.type === "logement"
+          ? [choisir("salon", seed), choisir("chambre", seed + 1), choisir("cuisine", seed + 2), choisir("sdb", seed + 3)]
+          : [choisir("chambre", seed)];
       }
       setAnnonce(a);
     });
@@ -127,41 +134,24 @@ function DetailAnnonce() {
             </div>
           </div>
 
-         <div className="contact-actions">
-            {annonce.auteur?._id && annonce.auteur._id !== JSON.parse(atob(localStorage.getItem("token")?.split(".")[1] || "e30=")).id && (
+        <div className="contact-actions">
+            {annonce.auteur?._id && (
               <button
                 className="btn btn-primary full"
                 onClick={() => {
-                  if (!localStorage.getItem("token")) {
-                    navigate("/connexion");
-                    return;
-                  }
-                  console.log("Auteur de cette annonce :", annonce.auteur);
+                  if (!localStorage.getItem("token")) { navigate("/connexion"); return; }
                   ouvrirChat(annonce.auteur._id, annonce.auteur.nom);
                 }}
               >
                 Envoyer un message
               </button>
             )}
-            <button className="btn btn-danger">Afficher le numéro</button>
-            <button className="btn btn-whatsapp">WhatsApp</button>
           </div>
-
-          <form className="contact-form" onSubmit={(e) => { e.preventDefault(); setMessage("Message envoyé (simulé)"); }}>
-            <label className="sr-only">Votre nom</label>
-            <input placeholder="Votre nom" />
-            <label className="sr-only">Votre email</label>
-            <input type="email" placeholder="Votre email" />
-            <label className="sr-only">Votre téléphone</label>
-            <input placeholder="Votre téléphone (facultatif)" />
-            <label className="sr-only">Message</label>
-            <textarea placeholder="Bonjour, cette annonce m'intéresse. Est-elle toujours disponible ?" rows="4" />
-            <button type="submit" className="btn btn-primary full">Envoyer la demande</button>
-          </form>
 
           <div style={{ marginTop: 12 }}>
             <button className="btn btn-outline full" onClick={gererSignalement}>Signaler</button>
           </div>
+
 
           {message && <p className="message" style={{ marginTop: 12 }}>{message}</p>}
         </aside>

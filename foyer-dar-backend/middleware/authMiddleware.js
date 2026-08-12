@@ -17,3 +17,4 @@ exports.protege = async (req, res, next) => {
     res.status(401).json({ message: "Aucun token fourni, accès refusé" });
   }
 };
+

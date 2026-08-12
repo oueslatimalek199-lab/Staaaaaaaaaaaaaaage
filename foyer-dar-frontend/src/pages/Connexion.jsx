@@ -17,7 +17,7 @@ function Connexion() {
     try {
       const reponse = await connecter(formulaire);
       localStorage.setItem("token", reponse.data.token);
-      navigate("/profil");
+      navigate(reponse.data.role === "administrateur" ? "/admin" : "/profil");
     } catch (err) {
       setMessage(err.response?.data?.message || "Une erreur est survenue");
     }

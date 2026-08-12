@@ -5,9 +5,7 @@ const crypto = require("crypto");
 const envoyerEmail = require("../utils/envoyerEmail");
 
 // Génère un token JWT pour un étudiant donné
-const genererToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "7d" });
-};
+const genererToken = (id, role) => jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: "7d" });
 
 // @route POST /api/etudiants/inscription
 exports.inscrire = async (req, res) => {
@@ -30,11 +28,12 @@ exports.inscrire = async (req, res) => {
       budget,
     });
 
-    res.status(201).json({
+    res.json({
       _id: etudiant._id,
       nom: etudiant.nom,
       email: etudiant.email,
-      token: genererToken(etudiant._id),
+      role: etudiant.role,
+      token: genererToken(etudiant._id, etudiant.role),
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -62,7 +61,8 @@ exports.connecter = async (req, res) => {
       _id: etudiant._id,
       nom: etudiant.nom,
       email: etudiant.email,
-      token: genererToken(etudiant._id),
+      role: etudiant.role,
+      token: genererToken(etudiant._id, etudiant.role),
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -190,7 +190,7 @@ exports.motDePasseOublie = async (req, res) => {
     await envoyerEmail(
       etudiant.email,
       "Réinitialisation de votre mot de passe — Foyer/Dar",
-      `Bonjour ${etudiant.nom},\n\nCliquez sur ce lien pour réinitialiser votre mot de passe (valable 10 minutes) :\n${lienReinitialisation}\n\nSi vous n'êtes pas à l'origine de cette demande, ignorez cet email.`
+      `Bonjour ${etudiant.nom},\n\nCliquez sur ce lien pour réinitialiser votre mot de passe (valable 10 minutes) :\n${lienReinitialisation}\n\nSi vous n'êtes pas à l'origine de cette demande,[...]`
     );
 
     res.json({ message: "Si un compte existe avec cet email, un lien de réinitialisation a été envoyé." });
@@ -224,3 +224,4 @@ exports.reinitialiserMotDePasse = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+

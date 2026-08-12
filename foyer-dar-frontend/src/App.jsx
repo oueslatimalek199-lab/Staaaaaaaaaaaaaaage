@@ -15,6 +15,7 @@ import MesFavoris from "./pages/MesFavoris";
 import Recommandations from "./pages/Recommandations";
 import Conversations from "./pages/Conversations";
 import Conversation from "./pages/Conversation";
+import Admin from "./pages/Admin";
 import { compterNonLus } from "./services/messageService";
 
 function App() {
@@ -23,32 +24,35 @@ function App() {
   const [menuOuvert, setMenuOuvert] = useState(false);
   const [nonLus, setNonLus] = useState(0);
   const [estConnecte, setEstConnecte] = useState(!!localStorage.getItem("token"));
+  const [estAdmin, setEstAdmin] = useState(false);
 
-  // Recalcule à chaque changement de page — donc juste après une connexion/déconnexion
   useEffect(() => {
-    setEstConnecte(!!localStorage.getItem("token"));
+    const token = localStorage.getItem("token");
+    setEstConnecte(!!token);
+    if (token) {
+      try {
+        setEstAdmin(JSON.parse(atob(token.split(".")[1])).role === "administrateur");
+      } catch {
+        setEstAdmin(false);
+      }
+    } else {
+      setEstAdmin(false);
+    }
   }, [location]);
 
   useEffect(() => {
-    if (!estConnecte) {
+    if (!estConnecte || estAdmin) {
       setNonLus(0);
       return;
     }
     const token = localStorage.getItem("token");
     const verifier = () => {
-      compterNonLus(token)
-        .then((r) => {
-          console.log("Nombre de non-lus reçu :", r.data.compte);
-          setNonLus(r.data.compte);
-        })
-        .catch((err) => {
-          console.error("Erreur récupération non-lus :", err.response?.data || err.message);
-        });
+      compterNonLus(token).then((r) => setNonLus(r.data.compte)).catch(() => {});
     };
     verifier();
     const intervalle = setInterval(verifier, 5000);
     return () => clearInterval(intervalle);
-  }, [estConnecte]);
+  }, [estConnecte, estAdmin]);
 
   const seDeconnecter = () => {
     localStorage.removeItem("token");
@@ -60,44 +64,53 @@ function App() {
     <ChatProvider>
       <div>
         <nav className="nav">
-          <div className="nav-brand">Foyer<span>/Dar</span></div>
-          <div className="nav-links">
-            <Link to="/annonces">Annonces</Link>
-            {estConnecte && <Link to="/creer-annonce">Publier une annonce</Link>}
-            {estConnecte && <Link to="/recommandations">Colocataires</Link>}
-            {estConnecte && (
-              <Link to="/messages" className="nav-link-badge">
-                Messages
-                {nonLus > 0 && <span className="nav-badge">{nonLus}</span>}
-              </Link>
-            )}
-
-            <div className="nav-account">
-              <button className="nav-account-btn" onClick={() => setMenuOuvert(!menuOuvert)}>
-                Mon compte ▾
-              </button>
-              {menuOuvert && (
-                <div className="nav-account-menu">
-                  {estConnecte ? (
-                    <>
-                      <Link to="/profil" onClick={() => setMenuOuvert(false)}>Mon profil</Link>
-                      <Link to="/mes-favoris" onClick={() => setMenuOuvert(false)}>Mes favoris</Link>
-                      <button onClick={seDeconnecter}>Se déconnecter</button>
-                    </>
-                  ) : (
-                    <>
-                      <Link to="/connexion" onClick={() => setMenuOuvert(false)}>Se connecter</Link>
-                      <Link to="/inscription" onClick={() => setMenuOuvert(false)}>S'inscrire</Link>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
+          <div className="nav-brand">
+            Foyer<span>/Dar</span>{estAdmin && <span style={{ color: "#F3ECDD", fontWeight: 400, fontSize: "0.9rem" }}> · Administration</span>}
           </div>
+
+          {estAdmin ? (
+            <div className="nav-links">
+              <button className="nav-account-btn" onClick={seDeconnecter}>Se déconnecter</button>
+            </div>
+          ) : (
+            <div className="nav-links">
+              <Link to="/annonces">Annonces</Link>
+              {estConnecte && <Link to="/creer-annonce">Publier une annonce</Link>}
+              {estConnecte && <Link to="/recommandations">Colocataires</Link>}
+              {estConnecte && (
+                <Link to="/messages" className="nav-link-badge">
+                  Messages
+                  {nonLus > 0 && <span className="nav-badge">{nonLus}</span>}
+                </Link>
+              )}
+
+              <div className="nav-account">
+                <button className="nav-account-btn" onClick={() => setMenuOuvert(!menuOuvert)}>
+                  Mon compte ▾
+                </button>
+                {menuOuvert && (
+                  <div className="nav-account-menu">
+                    {estConnecte ? (
+                      <>
+                        <Link to="/profil" onClick={() => setMenuOuvert(false)}>Mon profil</Link>
+                        <Link to="/mes-favoris" onClick={() => setMenuOuvert(false)}>Mes favoris</Link>
+                        <button onClick={seDeconnecter}>Se déconnecter</button>
+                      </>
+                    ) : (
+                      <>
+                        <Link to="/connexion" onClick={() => setMenuOuvert(false)}>Se connecter</Link>
+                        <Link to="/inscription" onClick={() => setMenuOuvert(false)}>S'inscrire</Link>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </nav>
 
         <Routes>
-          <Route path="/" element={<Navigate to="/annonces" replace />} />
+          <Route path="/" element={<Navigate to={estAdmin ? "/admin" : "/annonces"} replace />} />
           <Route path="/inscription" element={<Inscription />} />
           <Route path="/connexion" element={<Connexion />} />
           <Route path="/mot-de-passe-oublie" element={<MotDePasseOublie />} />
@@ -111,9 +124,10 @@ function App() {
           <Route path="/recommandations" element={<Recommandations />} />
           <Route path="/messages" element={<Conversations />} />
           <Route path="/messages/:autreId" element={<Conversation />} />
+          <Route path="/admin" element={<Admin />} />
         </Routes>
 
-        <ChatPopup />
+        {!estAdmin && <ChatPopup />}
       </div>
     </ChatProvider>
   );

@@ -52,3 +52,5 @@ exports.obtenirRecommandations = async (req, res) => {
     res.status(500).json({ message: "Impossible de calculer les recommandations pour le moment" });
   }
 };
+
+

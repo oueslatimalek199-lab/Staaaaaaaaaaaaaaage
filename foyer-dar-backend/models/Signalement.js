@@ -18,11 +18,8 @@ const signalementSchema = new mongoose.Schema(
       enum: ["frauduleuse", "contenu_inapproprie", "annonce_expiree", "autre"],
     },
     details: { type: String },
-    statut: {
-      type: String,
-      enum: ["en_attente", "traite"],
-      default: "en_attente",
-    },
+    statut: { type: String, enum: ["en_attente", "en_cours", "traite"], default: "en_attente" },
+    actionPrise: { type: String, enum: ["ignore", "annonce_cloturee", "annonce_supprimee"], default: null },
   },
   { timestamps: true }
 );

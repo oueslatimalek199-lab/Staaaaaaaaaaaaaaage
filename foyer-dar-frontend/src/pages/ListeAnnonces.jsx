@@ -1,10 +1,16 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { obtenirAnnonces } from "../services/annonceService";
+import { obtenirVilles } from "../services/villeService";
 
 function ListeAnnonces() {
   const [annonces, setAnnonces] = useState([]);
   const [filtres, setFiltres] = useState({ ville: "", type: "", prixMin: "", prixMax: "" });
+  const [villes, setVilles] = useState([]);
+
+  useEffect(() => {
+    obtenirVilles().then((r) => setVilles(r.data));
+  }, []);
 
   const chargerAnnonces = async () => {
     const filtresNettoyes = Object.fromEntries(Object.entries(filtres).filter(([, valeur]) => valeur !== ""));
@@ -39,12 +45,10 @@ function ListeAnnonces() {
         </select>
 
         <select name="ville" value={filtres.ville} onChange={gererChangementFiltre}>
-          <option value="">Toutes les villes</option>
-          <option value="Tunis Centre">Tunis Centre</option>
-          <option value="Ghazela">Ghazela</option>
-          <option value="Sousse">Sousse</option>
-          <option value="Sfax">Sfax</option>
-          <option value="Monastir">Monastir</option>
+            <option value="">Toutes les villes</option>
+            {villes.map((v) => (
+            <option key={v._id} value={v.nom}>{v.nom}</option>
+             ))}
         </select>
 
         <input name="prixMin" value={filtres.prixMin} onChange={gererChangementFiltre} placeholder="Prix min" />

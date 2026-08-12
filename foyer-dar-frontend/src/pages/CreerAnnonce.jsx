@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { creerAnnonce } from "../services/annonceService";
+import { obtenirVilles } from "../services/villeService";
 
 function CreerAnnonce() {
   const [formulaire, setFormulaire] = useState({
     type: "logement",
     titre: "",
-    ville: "Tunis Centre",
+    ville: "",
     quartier: "",
     proximiteFaculte: "",
     prix: "",
@@ -16,6 +17,11 @@ function CreerAnnonce() {
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
+  const [villes, setVilles] = useState([]);
+
+useEffect(() => {
+  obtenirVilles().then((r) => setVilles(r.data));
+}, []);
 
   const gererChangement = (e) => {
     setFormulaire({ ...formulaire, [e.target.name]: e.target.value });
@@ -55,13 +61,12 @@ function CreerAnnonce() {
           </div>
           <div className="field">
             <label>Ville</label>
-            <select name="ville" value={formulaire.ville} onChange={gererChangement}>
-              <option value="Tunis Centre">Tunis Centre</option>
-              <option value="Ghazela">Ghazela</option>
-              <option value="Sousse">Sousse</option>
-              <option value="Sfax">Sfax</option>
-              <option value="Monastir">Monastir</option>
-            </select>
+          <select name="ville" value={formulaire.ville} onChange={gererChangement} required>
+            <option value="">Choisir une ville</option>
+            {villes.map((v) => (
+            <option key={v._id} value={v.nom}>{v.nom}</option>
+         ))}
+          </select>
           </div>
           <div className="field">
             <label>Quartier</label>
