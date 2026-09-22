@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const envoyerEmail = require("../utils/envoyerEmail");
+const journaliser = require("../utils/journaliser");
 
 // Génère un token JWT pour un étudiant donné
 const genererToken = (id, role) => jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: "7d" });
@@ -51,11 +52,16 @@ exports.connecter = async (req, res) => {
     }
 
     const motDePasseValide = await bcrypt.compare(motDePasse, etudiant.motDePasse);
-    if (!motDePasseValide) return res.status(401).json({ message: "Email ou mot de passe incorrect" });
+    if (!motDePasseValide) {
+      await journaliser("connexion_echouee", etudiant._id, null, `Tentative avec mauvais mot de passe`, req);
+      return res.status(401).json({ message: "Email ou mot de passe incorrect" });
+    }
 
     if (etudiant.bloque) {
       return res.status(403).json({ message: "Ce compte a été bloqué par un administrateur" });
     }
+
+    await journaliser("connexion", etudiant._id, null, `Connexion réussie`, req);
 
     res.json({
       _id: etudiant._id,
@@ -89,6 +95,7 @@ exports.modifierProfil = async (req, res) => {
       new: true,
       runValidators: true,
     }).select("-motDePasse");
+    await journaliser("modification_profil", req.etudiant._id, null, `Champs modifiés: ${Object.keys(misesAJour).join(", ")}`, req);
 
     res.json(etudiant);
   } catch (err) {

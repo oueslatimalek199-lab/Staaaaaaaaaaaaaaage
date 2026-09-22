@@ -17,6 +17,18 @@ import Conversations from "./pages/Conversations";
 import Conversation from "./pages/Conversation";
 import Admin from "./pages/Admin";
 import { compterNonLus } from "./services/messageService";
+import MapLocation from "./MapLocation";
+
+function App() {
+  return (
+    <main>
+      <h2>Localisation</h2>
+
+      <MapLocation address="Monastir, Skanes, Tunisie" />
+    </main>
+  );
+}
+
 
 function App() {
   const location = useLocation();

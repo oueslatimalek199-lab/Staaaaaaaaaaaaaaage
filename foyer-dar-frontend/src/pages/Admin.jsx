@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate,Link } from "react-router-dom";
+import { obtenirVilles } from "../services/villeService";
 import {
   obtenirSignalements, traiterSignalement,
   obtenirUtilisateurs, basculerBlocage, supprimerUtilisateur,
   obtenirVillesAdmin, ajouterVille, basculerVilleActive,
+  exporterCsv
 } from "../services/adminService";
 
 function decoderRole(token) {
@@ -12,6 +14,34 @@ function decoderRole(token) {
   } catch {
     return null;
   }
+}
+function GraphiqueStat({ titre, url, token, nomFichier }) {
+  const [src, setSrc] = useState(null);
+
+  useEffect(() => {
+    let urlObjet;
+    setSrc(null);
+    fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => r.blob())
+      .then((blob) => {
+        urlObjet = URL.createObjectURL(blob);
+        setSrc(urlObjet);
+      });
+    return () => urlObjet && URL.revokeObjectURL(urlObjet);
+  }, [url, token]);
+
+  return (
+    <div className="surface-card" style={{ padding: 16, marginBottom: 20 }}>
+      {src ? (
+        <>
+          <img src={src} alt={titre} style={{ width: "100%", borderRadius: 6 }} />
+          <div style={{ marginTop: 10, textAlign: "right" }}>
+            <a href={src} download={nomFichier} className="detail-link">Télécharger l'image ⬇</a>
+          </div>
+        </>
+      ) : <p>Chargement du graphique...</p>}
+    </div>
+  );
 }
 
 function Admin() {
@@ -22,14 +52,20 @@ function Admin() {
   const [nouvelleVille, setNouvelleVille] = useState("");
   const [message, setMessage] = useState("");
   const [filtreSignalement, setFiltreSignalement] = useState("en_attente");
+  const [villesFiltre, setVillesFiltre] = useState([]);
+const [villeSelectionnee, setVilleSelectionnee] = useState("");
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
+
 
   const charger = () => {
     if (onglet === "signalements") obtenirSignalements(token).then((r) => setSignalements(r.data));
     if (onglet === "utilisateurs") obtenirUtilisateurs(token).then((r) => setUtilisateurs(r.data));
     if (onglet === "villes") obtenirVillesAdmin(token).then((r) => setVilles(r.data));
   };
+  useEffect(() => {
+  obtenirVilles().then((r) => setVillesFiltre(r.data));
+}, []);
 
   useEffect(() => {
     if (!token) {
@@ -87,6 +123,19 @@ function Admin() {
   if (!window.confirm("Supprimer définitivement cette annonce ? Cette action est irréversible.")) return;
   await gererTraiter(id, "supprimer_annonce");
 };
+const gererExportCsv = async () => {
+  try {
+    const reponse = await exporterCsv(villeSelectionnee || undefined, token);
+    const url = URL.createObjectURL(reponse.data);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "foyer_dar_annonces.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    setMessage("Erreur lors de l'export");
+  }
+};
 
   return (
     <div className="page-wide">
@@ -96,6 +145,7 @@ function Admin() {
         <button className={`btn ${onglet === "signalements" ? "btn-primary" : "btn-outline"}`} onClick={() => setOnglet("signalements")}>Signalements</button>
         <button className={`btn ${onglet === "utilisateurs" ? "btn-primary" : "btn-outline"}`} onClick={() => setOnglet("utilisateurs")}>Utilisateurs</button>
         <button className={`btn ${onglet === "villes" ? "btn-primary" : "btn-outline"}`} onClick={() => setOnglet("villes")}>Villes</button>
+        <button className={`btn ${onglet === "statistiques" ? "btn-primary" : "btn-outline"}`} onClick={() => setOnglet("statistiques")}>Statistiques</button>
       </div>
 
       {message && <p className="message">{message}</p>}
@@ -200,6 +250,40 @@ function Admin() {
               </div>
             ))}
           </div>
+        </div>
+      )}
+      {onglet === "statistiques" && (
+        <div>
+          <div className="filters-bar" style={{ marginBottom: 20 }}>
+            <select value={villeSelectionnee} onChange={(e) => setVilleSelectionnee(e.target.value)}>
+              <option value="">Toutes les villes</option>
+              {villesFiltre.map((v) => (
+                <option key={v._id} value={v.nom}>{v.nom}</option>
+              ))}
+            </select>
+            <button type="button" className="btn btn-primary" onClick={gererExportCsv}>
+              Exporter les données (CSV)
+            </button>
+          </div>
+
+          <GraphiqueStat
+            titre="Prix moyen par ville"
+            url={`http://localhost:5000/api/admin/statistiques/prix-moyen-par-ville${villeSelectionnee ? `?ville=${encodeURIComponent(villeSelectionnee)}` : ""}`}
+            token={token}
+            nomFichier="prix-moyen-par-ville.png"
+          />
+          <GraphiqueStat
+            titre="Offre vs demande"
+            url={`http://localhost:5000/api/admin/statistiques/offre-demande${villeSelectionnee ? `?ville=${encodeURIComponent(villeSelectionnee)}` : ""}`}
+            token={token}
+            nomFichier="offre-demande.png"
+          />
+          <GraphiqueStat
+            titre="Critères de recherche"
+            url={`http://localhost:5000/api/admin/statistiques/criteres-recherche${villeSelectionnee ? `?ville=${encodeURIComponent(villeSelectionnee)}` : ""}`}
+            token={token}
+            nomFichier="criteres-recherche.png"
+          />
         </div>
       )}
     </div>

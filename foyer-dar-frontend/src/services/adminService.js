@@ -13,3 +13,7 @@ export const supprimerUtilisateur = (id, token) => api.delete(`/admin/utilisateu
 export const obtenirVillesAdmin = (token) => api.get("/admin/villes", headers(token));
 export const ajouterVille = (nom, token) => api.post("/admin/villes", { nom }, headers(token));
 export const basculerVilleActive = (id, token) => api.put(`/admin/villes/${id}`, {}, headers(token));
+export const exporterCsv = (ville, token) => {
+  const params = ville ? { ville } : {};
+  return api.get("/admin/statistiques/export-csv", { ...headers(token), params, responseType: "blob" });
+};

@@ -3,6 +3,7 @@ const Annonce = require("../models/Annonce");
 const Etudiant = require("../models/Etudiant");
 const Ville = require("../models/Ville");
 const envoyerEmail = require("../utils/envoyerEmail");
+const journaliser = require("../utils/journaliser");
 
 // BF-18 — GET /api/admin/signalements
 exports.obtenirSignalements = async (req, res) => {
@@ -60,7 +61,7 @@ exports.traiterSignalement = async (req, res) => {
         `Bonjour ${signalement.signalePar.nom},\n\n${messageEmail}\n\nMerci de contribuer à la sécurité de la communauté Foyer/Dar.`
       ).catch((err) => console.error("Erreur envoi email signalement:", err.message));
     }
-
+    await journaliser("signalement_traite", req.etudiant._id, signalement._id, `Action: ${action}`, req);
     res.json({ message: "Signalement traité" });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -89,7 +90,13 @@ exports.basculerBlocage = async (req, res) => {
 
     utilisateur.bloque = !utilisateur.bloque;
     await utilisateur.save();
-
+    await journaliser(
+      utilisateur.bloque ? "blocage_utilisateur" : "deblocage_utilisateur",
+      req.etudiant._id,
+      utilisateur._id,
+      `Par admin ${req.etudiant.nom}`,
+      req
+    );
     res.json({ message: utilisateur.bloque ? "Utilisateur bloqué" : "Utilisateur débloqué", bloque: utilisateur.bloque });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -106,6 +113,7 @@ exports.supprimerUtilisateur = async (req, res) => {
       return res.status(400).json({ message: "Impossible de supprimer un administrateur" });
     }
 
+    await journaliser("suppression_utilisateur", req.etudiant._id, utilisateur._id, `Par admin ${req.etudiant.nom}`, req);
     await utilisateur.deleteOne();
     res.json({ message: "Utilisateur supprimé" });
   } catch (err) {
@@ -145,6 +153,20 @@ exports.basculerVilleActive = async (req, res) => {
     await ville.save();
 
     res.json(ville);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+const JournalAudit = require("../models/JournalAudit");
+
+// GET /api/admin/journal
+exports.obtenirJournal = async (req, res) => {
+  try {
+    const entrees = await JournalAudit.find()
+      .populate("acteur", "nom email")
+      .sort({ createdAt: -1 })
+      .limit(200);
+    res.json(entrees);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

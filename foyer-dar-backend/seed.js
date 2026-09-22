@@ -82,23 +82,43 @@ const ETUDIANTS_DEMO = [
 const TITRES_LOGEMENT = [
   "Chambre lumineuse proche fac", "Appartement S+1 meublé", "Colocation conviviale disponible",
   "Studio calme idéal étudiant", "Chambre dans appart 3 pièces", "Logement neuf proche transports",
+  "Belle chambre à 5 min de la fac", "Appart partagé, ambiance studieuse", "Chambre indépendante avec salle de bain",
+  "Coloc sympa cherche nouveau colocataire", "Studio rénové proche souk", "Chambre spacieuse quartier calme",
+  "Appartement lumineux 2ème étage", "Chambre meublée toutes commodités", "Logement proche arrêt de bus/louage",
 ];
 
 const TITRES_COLOC = [
   "Cherche coloc calme et sérieux(se)", "Recherche colocation proche fac", "Étudiant(e) cherche coloc pour la rentrée",
-  "Cherche appart à partager", "Recherche chambre en colocation",
+  "Cherche appart à partager", "Recherche chambre en colocation", "Étudiante cherche coloc non-fumeuse",
+  "Recherche colocataire studieux(se)", "Cherche logement pour la rentrée universitaire",
+  "Étudiant sérieux cherche coloc sympa", "Recherche coloc, budget serré mais flexible sur le reste",
 ];
 
 const DESCRIPTIONS_LOGEMENT = [
-  "Bel espace bien entretenu, proche des arrêts de transport et des commerces. Ambiance calme, idéal pour étudier.",
-  "Logement rénové récemment, lumineux, dans un quartier sûr et animé. Colocataires actuels sympas et respectueux.",
-  "Chambre spacieuse avec accès à une cuisine équipée et un salon commun. Quartier bien desservi.",
+  "Bel espace bien entretenu, proche des arrêts de transport (bus/louage) et des commerces. Ambiance calme, idéal pour étudier. Souk hebdomadaire à proximité.",
+  "Logement rénové récemment, lumineux, dans un quartier sûr et animé. Colocataires actuels sympas et respectueux, tous en fac.",
+  "Chambre spacieuse avec accès à une cuisine équipée et un salon commun. Quartier bien desservi, à 10-15 min de la fac à pied.",
+  "Appartement calme, parfait pour bachoter en période d'examens. Wifi fibre, quartier résidentiel, épicerie juste en bas.",
+  "Coloc actuelle composée de 2 étudiants sérieux, cherche un(e) 3ème pour compléter. Ambiance conviviale mais studieuse en semaine.",
+  "Studio indépendant avec entrée séparée, idéal si tu préfères ton espace tout en restant proche du centre-ville.",
+  "Proche de plusieurs facultés, quartier vivant avec cafés et restos pas chers pour étudiants. Transport facile pour rejoindre le centre.",
+  "Chambre avec balcon, bien exposée, dans un immeuble calme. Voisinage familial, quartier sécurisé.",
 ];
 
 const DESCRIPTIONS_COLOC = [
   "Étudiant(e) sérieux(se), non-fumeur, cherche colocataire avec un rythme de vie compatible pour la rentrée universitaire.",
-  "Recherche colocation proche de la fac, budget raisonnable, ambiance studieuse mais conviviale.",
-  "À la recherche d'un logement à partager, ouvert(e) à toute proposition correspondant à mon budget.",
+  "Recherche colocation proche de la fac, budget raisonnable, ambiance studieuse mais conviviale le week-end.",
+  "À la recherche d'un logement à partager, ouvert(e) à toute proposition correspondant à mon budget et à ma ville.",
+  "Étudiant(e) en 2ème année, calme, cherche coloc pour partager un appart proche des transports.",
+  "Cherche colocation pour la rentrée — flexible sur le quartier tant que c'est bien desservi par bus/louage.",
+  "Recherche une chambre simple, pas besoin de luxe, juste calme et propre pour bien travailler.",
+  "Étudiant(e) qui rentre souvent le week-end voir la famille, cherche coloc compréhensif(ve) sur les horaires.",
+];
+
+const REGLES_COLOCATION = [
+  "Non-fumeurs uniquement", "Animaux non acceptés", "Silence demandé après 22h en semaine",
+  "Ménage partagé équitablement", "Visites possibles avec accord préalable", "Pas de restriction particulière, juste du respect mutuel",
+  "Cuisine et charges partagées entre colocataires", "Ambiance calme demandée en période d'examens",
 ];
 
 
@@ -166,11 +186,10 @@ async function seed() {
         nombreChambresDisponibles: type === "logement" ? aleaN(1, 3) : null,
         photos: type === "logement" ? genererPhotosLogement() : genererPhotosColoc(),
         equipements: melange(EQUIPEMENTS).slice(0, aleaN(2, 5)),
+        reglesColocation: type === "logement" ? alea(REGLES_COLOCATION) : null,
         description: type === "logement" ? alea(DESCRIPTIONS_LOGEMENT) : alea(DESCRIPTIONS_COLOC),
         statut: "active",
       });
-    }
-  }
 
   await Annonce.insertMany(annonces);
   console.log(`${annonces.length} nouvelles annonces créées ✅`);
