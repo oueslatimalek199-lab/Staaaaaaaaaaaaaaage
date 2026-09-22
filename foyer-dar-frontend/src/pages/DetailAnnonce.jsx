@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { obtenirAnnonceParId, ajouterFavori, signalerAnnonce } from "../services/annonceService";
 import { useChat } from "../context/ChatContext";
+import MapLocation from "../MapLocation";
 function DetailAnnonce() {
   const { id } = useParams();
   const [annonce, setAnnonce] = useState(null);
@@ -106,23 +107,14 @@ function DetailAnnonce() {
             </div>
           </div>
 
-          <section className="listing-section">
-            <h2>Description</h2>
-            <p className="description">{annonce.description || "Aucune description fournie."}</p>
-          </section>
-
-          <section className="listing-section">
-            <h2>Localisation</h2>
-            <div className="map-wrapper">
-              {/* si tu utilises une map réelle, remplace l'iframe par le composant map */}
-              <iframe
-                title="map"
-                src={`https://www.openstreetmap.org/export/embed.html?bbox=9.85%2C36.8%2C10.1%2C36.9&layer=mapnik`}
-                style={{ border: 0 }}
-                loading="lazy"
-              />
-            </div>
-          </section>
+         <section className="listing-section">
+  <h2>Localisation</h2>
+  <div className="map-wrapper">
+    <MapLocation
+      address={`${annonce.ville}${annonce.quartier ? `, ${annonce.quartier}` : ""}, Tunisie`}
+    />
+  </div>
+</section>
         </main>
 
         <aside className="listing-aside surface-card contact-panel">

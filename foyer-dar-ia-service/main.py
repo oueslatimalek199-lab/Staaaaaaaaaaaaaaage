@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Header, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
 from sklearn.metrics.pairwise import cosine_similarity
@@ -25,6 +26,16 @@ COULEUR_OLIVE = "#6E7A46"
 load_dotenv()
 
 app = FastAPI(title="Foyer/Dar - Service de Matching IA")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 API_KEY = os.getenv("MATCHING_API_KEY")
 client = MongoClient(os.getenv("MONGO_URI"))
@@ -86,7 +97,10 @@ def geocode_address(data: AddressRequest):
         )
 
     # Ajouter la Tunisie pour améliorer les résultats
-    search_address = f"{address}, Tunisie"
+    if "tunisie" in address.lower():
+        search_address = address
+    else:
+        search_address = f"{address}, Tunisie"
 
     try:
         location = geolocator.geocode(
